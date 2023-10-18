@@ -1,4 +1,3 @@
-use std::ops::Add;
 
 static  BASE64_TABLE : &[char] = &[
     'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
@@ -7,17 +6,7 @@ static  BASE64_TABLE : &[char] = &[
     'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'                	
 ];
 
-
-fn bit_count(number:  u64) -> u64 {
-    let mut n = number;
-    let mut counter = 0;
-    while n != 0 {
-        n >>= 1;
-        counter += 1;
-    }
-    counter
-} 
-fn char_to_bits_str(chr :char) -> String {
+fn ascci_to_bit_str(chr :char) -> String {
     let mut ascci = chr as u8;
     let mut out: String =  String::new();
     while ascci != 0 {
@@ -31,8 +20,7 @@ fn char_to_bits_str(chr :char) -> String {
 
     out.chars().rev().collect()
 }
-
-fn from_bits_str_to_int(str:String ) -> u8 {
+fn bit_str_to_int(str:String ) -> u8 {
     let mut out  = 0;
 
     let mut power = 0;
@@ -48,91 +36,45 @@ fn from_bits_str_to_int(str:String ) -> u8 {
 } 
 
 
+fn ceil(a : u64,b : u64 ) -> u64 {
+    if (a % b) == 0 {
+        return a / b;
+    }
+    return (a / b) + 1;
+}
 fn encode_base64(str : String) -> String {
     let mut out_str = String::new();
     
-    let mut counter : usize = 0;
+    
     let mut tmp_str = String::new();
     let mut sliced = String::new();
 
-
-    let mut bin_str: String = String::new();
-
-    let mut _bits : u64 = 0; 
-    while counter <= str.len() {
-        if tmp_str.len() == 24 {
-            tmp_str = tmp_str.chars().rev().collect();
-            
-            while tmp_str.len() > 0 {
-                sliced.push(
-                    tmp_str.pop().unwrap()
-                );
-                if sliced.len() == 6 {
-                    sliced = sliced.chars().rev().collect();
-                    out_str.push(BASE64_TABLE[from_bits_str_to_int(sliced.clone()) as usize]);
-                    sliced.clear();
-                
-                } 
-            }
-
-            if sliced.len() != 0 {
-                sliced = sliced.chars().rev().collect();
-
-                while sliced.len() < 6 {
-                    sliced.push('0');
-                }
-
-                sliced = sliced.chars().rev().collect();
-                out_str.push(BASE64_TABLE[from_bits_str_to_int(sliced.clone()) as usize]);
-                sliced.clear();
-            }
-
-            
-
-        }
-
-        if counter == str.len() {break;}
-        tmp_str  += &char_to_bits_str(str.chars().nth(counter).unwrap());
-        bin_str  += &char_to_bits_str(str.chars().nth(counter).unwrap());
-        
-        counter += 1;
+    for chr in str.chars() {
+        tmp_str  += &ascci_to_bit_str(chr);
     }
     
-
-
-    while tmp_str.len() > 0 {
-        sliced = sliced.chars().rev().collect();
-        
-        sliced.push(
-            tmp_str.pop().unwrap()
-        );
-        
-        if sliced.len() == 6 {
-            sliced = sliced.chars().rev().collect();
-            out_str.push(BASE64_TABLE[from_bits_str_to_int(sliced.clone()) as usize]);
-            sliced.clear();
-        } 
-    }
-    if sliced.len() != 0 {
-        sliced = sliced.chars().rev().collect();
-
-        while sliced.len() < 6 {
-            sliced.push('0');
-        }
-        sliced = sliced.chars().rev().collect();
-
-
-        out_str.push(BASE64_TABLE[from_bits_str_to_int(sliced.clone()) as usize]);
+    tmp_str = tmp_str.chars().rev().collect();
+    while tmp_str.len() != 0 {
         sliced.clear();
-    }    
 
+        sliced.clear();
+        let mut i = 0;
+        while i < 6 && tmp_str.len() > 0 {
+            sliced.push( tmp_str.pop().unwrap());
+            i+=1;
+        }
+        
+        if i < 6 {
+            while sliced.len() < 6 { sliced.push('0'); }
+        } 
 
+        sliced = sliced.chars().rev().collect();
+        out_str.push(BASE64_TABLE[bit_str_to_int(sliced.clone()) as usize]);
+    } 
 
     while (out_str.len() % 4) != 0  {
         out_str.push('=');               
     }
-
-    // bin_str = bin_str.chars().rev().collect();
 
     out_str
 }
@@ -142,7 +84,6 @@ fn main() {
 
     let mut input_str: String = String::new();
     std::io::stdin().read_line(&mut input_str).unwrap();
-
     input_str.pop();
 
     print!("{}\n",encode_base64(input_str));
