@@ -1,3 +1,5 @@
+use std::char;
+
 
 static  BASE64_TABLE : &[char] = &[
     'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
@@ -34,14 +36,17 @@ fn bit_str_to_int(str:String ) -> u8 {
 
     out
 } 
+fn number_to_bit_str(number :u64) -> String {
+    let mut out: String =  String::new();
+    let mut num = number;
 
-
-fn ceil(a : u64,b : u64 ) -> u64 {
-    if (a % b) == 0 {
-        return a / b;
+    while num != 0 {
+        out.push((num % 2).to_string().chars().nth(0).unwrap());
+        num >>= 1;
     }
-    return (a / b) + 1;
+    out
 }
+
 fn encode_base64(str : String) -> String {
     let mut out_str = String::new();
     
@@ -55,7 +60,6 @@ fn encode_base64(str : String) -> String {
     
     tmp_str = tmp_str.chars().rev().collect();
     while tmp_str.len() != 0 {
-        sliced.clear();
 
         sliced.clear();
         let mut i = 0;
@@ -70,15 +74,67 @@ fn encode_base64(str : String) -> String {
 
         sliced = sliced.chars().rev().collect();
         out_str.push(BASE64_TABLE[bit_str_to_int(sliced.clone()) as usize]);
+
+
+        sliced.clear();
     } 
 
     while (out_str.len() % 4) != 0  {
         out_str.push('=');               
     }
 
+
+
+
     out_str
 }
 
+
+fn decode_base64(str : String) -> String {
+    let mut tmp_str  = str.clone();
+    let mut out_str = String::new();
+
+    while tmp_str.chars().nth(tmp_str.len() - 1).unwrap() == '=' {
+        tmp_str.pop();
+    }
+
+    let mut binary_str  = String::new();
+    for chr in tmp_str.chars() {
+        let idx = BASE64_TABLE.iter().position(|&char| char == chr).unwrap();
+        let mut bit_str = number_to_bit_str(idx as u64);
+
+        while bit_str.len() < 6 {
+            bit_str.push('0');
+        }
+
+        bit_str = bit_str.chars().rev().collect();
+        binary_str += &bit_str;
+    }
+
+    binary_str = binary_str.chars().rev().collect();
+
+    let mut splited = String::new();
+    while binary_str.len() != 0 {
+        let mut i = 0;
+        while i < 8 &&  binary_str.len() > 0  {
+            splited.push(binary_str.pop().unwrap());
+            i += 1;
+        }
+        
+        if i < 8 {
+            while splited.len() < 8 {
+                splited.push('0');
+            }
+        }
+
+        splited = splited.chars().rev().collect();
+
+        out_str.push(bit_str_to_int(splited.clone()) as char);
+        splited.clear()
+    } 
+
+    out_str
+}
 
 fn main() {
 
@@ -86,5 +142,7 @@ fn main() {
     std::io::stdin().read_line(&mut input_str).unwrap();
     input_str.pop();
 
-    print!("{}\n",encode_base64(input_str));
+    let encoded = encode_base64(input_str);
+    let decoded = decode_base64(encoded.clone());
+    print!("{encoded} {decoded}\n",);
 }
